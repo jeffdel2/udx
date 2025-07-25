@@ -1,0 +1,70 @@
+extends layout
+
+block content
+  .container
+    // h1.profile.text-center-profile Profile Page
+
+    if user
+      .row.g-4
+        // Left Column - User Information & Registered Devices
+        .col-md-6
+          // User Information Card
+          .card.shadow-sm.mb-4
+            .card-body
+              h4.profile.mb-3 User Information
+              .profile-section
+                p
+                  strong Name: 
+                  | #{user.given_name + " " + user.family_name || 'Parks Guest'}
+                p
+                  strong Email: 
+                  | #{user.email || 'Not available'}
+                p
+                  strong Last Login: 
+                  | #{user.last_login || 'Not available'}
+
+
+
+        // Right Column - Editable Profile Form
+        .col-md-6
+          .card.shadow-sm
+            .card-body
+              h4.profile.mb-3 Edit Profile
+
+              form(action="/profile" method="POST")
+              
+                .mb-3
+                  label(for="given_name") First Name
+                  input#given_name.form-control(type="given_name" name="given_name" value=user.given_name placeholder="Enter your first name")
+                  
+                .mb-3
+                  label(for="family_name") Last Name
+                  input#family_name.form-control(type="family_name" name="family_name" value=user.family_name placeholder="Enter your last name")
+                  
+                .mb-3
+                  label(for="email") Email
+                  input#email.form-control(type="email" name="email" value=user.email placeholder="Enter your email")
+                
+
+                h5.mt-4 Consent Preferences
+                .row.g-2
+                  each consent, index in ['privacy', 'consent', 'terms']
+                    .col-6
+                      .form-check
+                        input.form-check-input(
+                          type="checkbox"
+                          name="consents[]"
+                          value=consent
+                          checked=user.user_metadata.consents.includes(consent) ? 'checked' : false
+                        )
+                        label.form-check-label= consent.replace('_', ' ')
+
+                .text-center.mt-4
+                  button.btn.btn-primary(type="submit") Update Profile
+
+      footer.text-center.mt-4
+        p &copy; 2025 - Profile Management System
+
+    else
+      p.text-center You are not logged in.
+      

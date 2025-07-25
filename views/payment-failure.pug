@@ -1,0 +1,8 @@
+extends layout
+
+block content
+  .container
+    h1 ❌ Payment Failed
+    p Sorry, your payment could not be processed.
+    p Reason: #{reason}
+    a(href="/checkout") ← Try again

@@ -1,0 +1,9 @@
+extends layout
+
+block content
+  .container
+    h1 ✅ Payment Successful!
+    p Thank you, #{name}.
+    p Your payment of $#{total.toFixed(2)} via #{vendor} was processed.
+    p Transaction ID: #{transactionId}
+    a(href="/") ← Back to ticket selection

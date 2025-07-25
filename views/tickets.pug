@@ -1,0 +1,15 @@
+extends layout
+
+block content
+  .container
+    h1 Select Your Tickets
+
+    .tickets
+      each ticket in tickets
+        .card
+          h2= ticket.name
+          p= ticket.description
+          p Price: $#{ticket.price.toFixed(2)}
+          form(action="/add-to-cart", method="POST")
+            input(type="hidden", name="ticketId", value=ticket.id)
+            button(type="submit") Add to Cart
