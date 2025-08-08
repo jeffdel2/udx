@@ -3,3 +3,17 @@ extends layout.pug
 block content
     .home-page
         .banner
+            if user
+                .welcome-content
+                    h1.welcome-title Welcome back, #{user.name || user.given_name || 'Guest'}!
+                    p.welcome-subtitle We're excited to have you here. Explore our amazing attractions and experiences.
+                    .welcome-actions
+                        a.btn.btn-primary(href='/tickets') Get Tickets
+                        a.btn.btn-outline-primary(href='/profile') My Profile
+            else
+                .default-content
+                    h1.default-title Experience the Magic
+                    p.default-subtitle Discover unforgettable adventures at Universal Parks
+                    .default-actions
+                        a.btn.btn-primary(href='/login') Sign In
+                        a.btn.btn-outline-primary(href='/tickets') Explore Tickets

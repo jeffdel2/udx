@@ -1,15 +1,42 @@
 extends layout
 
 block content
-  .container
-    h1 Select Your Tickets
+  .tickets-page
+    .container
+      h1.profile.text-center-profile Select Your Tickets
 
-    .tickets
-      each ticket in tickets
-        .card
-          h2= ticket.name
-          p= ticket.description
-          p Price: $#{ticket.price.toFixed(2)}
-          form(action="/add-to-cart", method="POST")
-            input(type="hidden", name="ticketId", value=ticket.id)
-            button(type="submit") Add to Cart
+      .row.g-4
+        each ticket in tickets
+          .col-md-4
+            .card.shadow-sm.h-100
+              .card-body
+                h4.profile.mb-3= ticket.name
+                p.mb-3= ticket.description
+                .d-flex.justify-content-between.align-items-center.mb-3
+                  span.h5.text-primary $#{ticket.price.toFixed(2)}
+                  span.badge.bg-success Available
+                
+                form(action="/add-to-cart", method="POST")
+                  input(type="hidden", name="ticketId", value=ticket.id)
+                  button.btn.btn-primary.w-100(type="submit")
+                    i.material-symbols-outlined.me-2 shopping_cart
+                    | Add to Cart
+
+      .row.mt-4
+        .col-12
+          .card.shadow-sm
+            .card-body
+              h4.profile.mb-3 Ticket Information
+              .row
+                .col-md-6
+                  h5.profile.mb-2 Day Pass
+                  p.small.text-muted Perfect for a single day visit with unlimited rides and attractions.
+                .col-md-6
+                  h5.profile.mb-2 Weekend Pass
+                  p.small.text-muted Great value for weekend getaways with extended access.
+                .col-md-6.mt-3
+                  h5.profile.mb-2 Season Pass
+                  p.small.text-muted Best value for frequent visitors with season-long access.
+
+      footer.text-center.mt-4
+        p &copy; 2025 - Universal Parks Ticket System

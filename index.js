@@ -193,9 +193,7 @@ app.get('/profile', requiresAuth(), async (req, res) => {
     res.locals.user = req.oidc.user;
   }
   res.render('profile2', { user: res.locals.user });
-  //console.log('Res sent to template:', res.locals.user);
 });
-
 
 // Handle profile updates
 app.post('/profile', requiresAuth(), async (req, res) => {
@@ -279,7 +277,10 @@ const tickets = [
 
 // Home page with tickets
 app.get('/tickets', (req, res) => {
-  res.render('tickets', { tickets });
+  res.render('tickets', { 
+    tickets,
+    user: req.oidc && req.oidc.user
+  });
 });
 
 // Add to cart
@@ -290,6 +291,17 @@ app.post('/add-to-cart', (req, res) => {
 
   req.session.cart = req.session.cart || [];
   req.session.cart.push(ticket);
+  res.redirect('/checkout');
+});
+
+// Remove from cart
+app.post('/remove-from-cart', (req, res) => {
+  const itemIndex = parseInt(req.body.itemIndex);
+  
+  if (req.session.cart && itemIndex >= 0 && itemIndex < req.session.cart.length) {
+    req.session.cart.splice(itemIndex, 1);
+  }
+  
   res.redirect('/checkout');
 });
 
@@ -579,7 +591,7 @@ app.use(requiresAuth(), async (req, res, next) => {
   try {
     const token = await getManagementApiToken()
     const userId = req.oidc.user.sub;
-    const response = await axios.get(`${ISSUER_BASE_URL}/api/v2/users/${userId}`, {
+    const response = await axios.get(`${process.env.ISSUER_BASE_URL}/api/v2/users/${userId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     res.locals.user = response.data;

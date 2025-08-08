@@ -24,6 +24,81 @@
   position: absolute;
 }
 
+/* Dynamic banner content styles */
+.home-page .banner .welcome-content,
+.home-page .banner .default-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  color: #ffffff;
+  padding: 40px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 14px;
+  margin: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.home-page .banner .welcome-title,
+.home-page .banner .default-title {
+  font-size: 3rem;
+  font-weight: bold;
+  margin-bottom: 20px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.home-page .banner .welcome-subtitle,
+.home-page .banner .default-subtitle {
+  font-size: 1.5rem;
+  margin-bottom: 30px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.home-page .banner .welcome-actions,
+.home-page .banner .default-actions {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.home-page .banner .btn {
+  padding: 12px 30px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.home-page .banner .btn-primary {
+  background-color: #005e60;
+  color: #ffffff;
+  border-color: #005e60;
+}
+
+.home-page .banner .btn-primary:hover {
+  background-color: #004a4c;
+  border-color: #004a4c;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.home-page .banner .btn-outline-primary {
+  background-color: transparent;
+  color: #ffffff;
+  border-color: #ffffff;
+}
+
+.home-page .banner .btn-outline-primary:hover {
+  background-color: #ffffff;
+  color: #005e60;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
 .home-page {
   background-color: #ffffff;
   display: flex;
@@ -1088,7 +1163,7 @@ p.user {
   }
   
   .cart .overlap-group {
-    background-color: #e1e1e;
+    background-color: #e1e1e1;
     height: 39px;
     position: relative;
     width: 163px;
@@ -1749,4 +1824,342 @@ hr {
     .container {
         padding: 20px;
     }
+}
+
+/* Tickets page specific styles */
+.tickets-page {
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  padding: 20px 0;
+  position: relative;
+  z-index: 1;
+  margin-top: 80px; /* Add margin to account for the header */
+}
+
+/* Override grid layout issues for tickets page */
+.tickets-page .div {
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+.tickets-page .grid {
+  position: static !important;
+  display: block !important;
+  background: none !important;
+  padding: 0 !important;
+}
+
+.tickets-page .box {
+  position: static !important;
+  display: block !important;
+  background: none !important;
+}
+
+.tickets-page .container {
+  max-width: 1200px;
+  margin: 0 auto;
+  background: #fff;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 2;
+}
+
+.tickets-page .card {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  border: 1px solid #e1e1e1;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.tickets-page .card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.tickets-page .card-body {
+  padding: 1.5rem;
+}
+
+.tickets-page .badge {
+  font-size: 0.75rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.tickets-page .btn-primary {
+  background-color: #c3002f;
+  border-color: #c3002f;
+  transition: all 0.3s ease;
+}
+
+.tickets-page .btn-primary:hover {
+  background-color: #930124;
+  border-color: #930124;
+  transform: translateY(-1px);
+}
+
+.tickets-page .text-primary {
+  color: #005e60 !important;
+}
+
+.tickets-page .bg-success {
+  background-color: #28a745 !important;
+}
+
+.tickets-page .material-symbols-outlined {
+  font-size: 1.1rem;
+  vertical-align: middle;
+}
+
+.tickets-page .h-100 {
+  height: 100% !important;
+}
+
+.tickets-page .shadow-sm {
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+}
+
+.tickets-page .text-muted {
+  color: #6c757d !important;
+}
+
+.tickets-page .small {
+  font-size: 0.875rem;
+}
+
+/* Profile page specific styles */
+.profile-page {
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  padding: 20px 0;
+  position: relative;
+  z-index: 1;
+  margin-top: 80px; /* Add margin to account for the header */
+}
+
+/* Override grid layout issues for profile page */
+.profile-page .div {
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+.profile-page .grid {
+  position: static !important;
+  display: block !important;
+  background: none !important;
+  padding: 0 !important;
+}
+
+.profile-page .box {
+  position: static !important;
+  display: block !important;
+  background: none !important;
+}
+
+.profile-page .container {
+  max-width: 1200px;
+  margin: 0 auto;
+  background: #fff;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 2;
+}
+
+.profile-page .card {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  border: 1px solid #e1e1e1;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.profile-page .card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.profile-page .card-body {
+  padding: 1.5rem;
+}
+
+.profile-page .btn-primary {
+  background-color: #c3002f;
+  border-color: #c3002f;
+  transition: all 0.3s ease;
+}
+
+.profile-page .btn-primary:hover {
+  background-color: #930124;
+  border-color: #930124;
+  transform: translateY(-1px);
+}
+
+.profile-page .shadow-sm {
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+}
+
+.profile-page .text-center-profile {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.profile-page h1.profile {
+  font-size: 2.5rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+/* Checkout page specific styles */
+.checkout-page {
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  padding: 20px 0;
+  position: relative;
+  z-index: 1;
+  margin-top: 80px; /* Add margin to account for the header */
+}
+
+/* Override grid layout issues for checkout page */
+.checkout-page .div {
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+.checkout-page .grid {
+  position: static !important;
+  display: block !important;
+  background: none !important;
+  padding: 0 !important;
+}
+
+.checkout-page .box {
+  position: static !important;
+  display: block !important;
+  background: none !important;
+}
+
+.checkout-page .container {
+  max-width: 1200px;
+  margin: 0 auto;
+  background: #fff;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 2;
+}
+
+.checkout-page .card {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  border: 1px solid #e1e1e1;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.checkout-page .card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.checkout-page .card-body {
+  padding: 1.5rem;
+}
+
+.checkout-page .btn-primary {
+  background-color: #c3002f;
+  border-color: #c3002f;
+  transition: all 0.3s ease;
+}
+
+.checkout-page .btn-primary:hover {
+  background-color: #930124;
+  border-color: #930124;
+  transform: translateY(-1px);
+}
+
+.checkout-page .text-primary {
+  color: #005e60 !important;
+}
+
+.checkout-page .shadow-sm {
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+}
+
+.checkout-page .text-muted {
+  color: #6c757d !important;
+}
+
+.checkout-page .small {
+  font-size: 0.875rem;
+}
+
+.checkout-page .material-symbols-outlined {
+  font-size: 1.1rem;
+  vertical-align: middle;
+}
+
+.checkout-page .btn-lg {
+  padding: 12px 30px;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.checkout-page .order-items {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.checkout-page .form-label {
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.checkout-page .form-control {
+  border-radius: 6px;
+  border: 1px solid #ced4da;
+  padding: 0.75rem;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.checkout-page .form-control:focus {
+  border-color: #005e60;
+  box-shadow: 0 0 0 0.2rem rgba(0, 94, 96, 0.25);
+}
+
+.checkout-page .btn-outline-danger {
+  color: #dc3545;
+  border-color: #dc3545;
+  background-color: transparent;
+  transition: all 0.3s ease;
+}
+
+.checkout-page .btn-outline-danger:hover {
+  color: #fff;
+  background-color: #dc3545;
+  border-color: #dc3545;
+  transform: translateY(-1px);
+}
+
+.checkout-page .btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  border-radius: 0.375rem;
+}
+
+.checkout-page .border-bottom {
+  border-bottom: 1px solid #e9ecef !important;
+}
+
+.checkout-page .fw-bold {
+  font-weight: 600 !important;
+}
+
+.checkout-page .p-2 {
+  padding: 0.5rem !important;
 }
