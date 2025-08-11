@@ -63,6 +63,31 @@ block content
                   .text-center.mt-4
                     button.btn.btn-primary(type="submit") Update Profile
 
+
+        // Purchased Tickets Section
+        .row.mt-4
+          .col-12
+            .card.shadow-sm
+              .card-body
+                h4.profile.mb-3 My Purchased Tickets
+                
+                if userPurchasedTickets && userPurchasedTickets.length > 0
+                  .purchased-tickets
+                    each ticket in userPurchasedTickets
+                      .ticket-item.mb-2.p-2.border.rounded.bg-success.bg-opacity-10
+                        .d-flex.justify-content-between.align-items-center
+                          .ticket-info
+                            strong Purchased Ticket: 
+                            span.text-success #{ticket.type}
+                          .ticket-status
+                            small.text-success
+                              i.material-symbols-outlined check_circle
+                              |  Purchased
+                else
+                  .text-center.text-muted
+                    p.mb-0 No purchased tickets found
+                    small You haven't purchased any tickets yet.
+
         footer.text-center.mt-4
           p &copy; 2025 - Profile Management System
 

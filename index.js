@@ -64,6 +64,7 @@ const path = require('path')
 const { auth, requiresAuth } = require('express-openid-connect')
 const { Issuer } = require('openid-client')
 const { JWK } = require('node-jose')
+const { OktaFGAIntegration, createAuthMiddleware } = require('./fga-integration')
 
 //var privateKey = process.env.PVT_KEY.replace(/\\n/g, "\n")
 var keystore = JWK.createKeyStore()
@@ -128,6 +129,11 @@ app.set('views', path.join(__dirname, 'views'))
 app.set('view engine', 'pug')
 app.use('/static', express.static('public'))
 app.use(auth(authConfig))
+
+// Initialize FGA integration
+const fgaIntegration = new OktaFGAIntegration();
+const fgaAuthMiddleware = createAuthMiddleware(fgaIntegration);
+
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 app.use(cookieParser())
@@ -181,7 +187,7 @@ app.get('/user', requiresAuth(), async (req, res) => {
 
 
 app.get('/profile', requiresAuth(), async (req, res) => {
-    try {
+  try {
     const token = await getManagementApiToken()
     const userId = req.oidc.user.sub;
     const response = await axios.get(`${process.env.ISSUER_BASE_URL}/api/v2/users/${userId}`, {
@@ -192,7 +198,30 @@ app.get('/profile', requiresAuth(), async (req, res) => {
     console.error('Error fetching user data:', error.message);
     res.locals.user = req.oidc.user;
   }
-  res.render('profile2', { user: res.locals.user });
+
+  // Get user's ticket relationships from FGA
+  let userTicketRelationships = [];
+  let userPurchasedTickets = [];
+  
+  try {
+    userTicketRelationships = await fgaIntegration.getUserTicketRelationships(req.oidc.user.sub);
+    console.log('User ticket relationships:', userTicketRelationships);
+  } catch (error) {
+    console.error('Error fetching ticket relationships:', error.message);
+  }
+
+  try {
+    userPurchasedTickets = await fgaIntegration.getUserPurchasedTickets(req.oidc.user.sub);
+    console.log('User purchased tickets:', userPurchasedTickets);
+  } catch (error) {
+    console.error('Error fetching purchased tickets:', error.message);
+  }
+
+  res.render('profile2', { 
+    user: res.locals.user,
+    userTicketRelationships: userTicketRelationships,
+    userPurchasedTickets: userPurchasedTickets
+  });
 });
 
 // Handle profile updates
@@ -276,22 +305,57 @@ const tickets = [
 ];
 
 // Home page with tickets
-app.get('/tickets', (req, res) => {
-  res.render('tickets', { 
-    tickets,
-    user: req.oidc && req.oidc.user
-  });
+app.get('/tickets', requiresAuth(), async (req, res) => {
+  try {
+    // Get all ticket relationships for the user
+    const userTicketRelationships = await fgaIntegration.getUserTicketRelationships(req.oidc.user.sub);
+    
+    // Check if user has any ticket relationships
+    if (!userTicketRelationships || userTicketRelationships.length === 0) {
+      return res.status(403).json({ 
+        error: 'Access denied', 
+        message: 'You do not have any ticket relationships defined in FGA' 
+      });
+    }
+    
+    console.log('User ticket relationships:', userTicketRelationships);
+    
+    res.render('tickets', { 
+      tickets,
+      user: req.oidc && req.oidc.user,
+      userTicketRelationships: userTicketRelationships
+    });
+  } catch (error) {
+    console.error('Error checking ticket relationships:', error.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // Add to cart
-app.post('/add-to-cart', (req, res) => {
-  const ticketId = req.body.ticketId;
-  const ticket = tickets.find(t => t.id === ticketId);
-  if (!ticket) return res.status(404).send('Ticket not found.');
+app.post('/add-to-cart', requiresAuth(), async (req, res) => {
+  try {
+    // Get all ticket relationships for the user
+    const userTicketRelationships = await fgaIntegration.getUserTicketRelationships(req.oidc.user.sub);
+    
+    // Check if user has any ticket relationships
+    if (!userTicketRelationships || userTicketRelationships.length === 0) {
+      return res.status(403).json({ 
+        error: 'Access denied', 
+        message: 'You do not have any ticket relationships defined in FGA' 
+      });
+    }
+    
+    const ticketId = req.body.ticketId;
+    const ticket = tickets.find(t => t.id === ticketId);
+    if (!ticket) return res.status(404).send('Ticket not found.');
 
-  req.session.cart = req.session.cart || [];
-  req.session.cart.push(ticket);
-  res.redirect('/checkout');
+    req.session.cart = req.session.cart || [];
+    req.session.cart.push(ticket);
+    res.redirect('/checkout');
+  } catch (error) {
+    console.error('Error checking ticket relationships:', error.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // Remove from cart
@@ -305,6 +369,94 @@ app.post('/remove-from-cart', (req, res) => {
   res.redirect('/checkout');
 });
 
+// FGA Management Routes (for testing and administration)
+app.post('/fga/grant-permission', requiresAuth(), async (req, res) => {
+  try {
+    const { userId, action, resource } = req.body;
+    
+    if (!userId || !action || !resource) {
+      return res.status(400).json({ error: 'Missing required parameters' });
+    }
+    
+    const success = await fgaIntegration.createRelationship(userId, action, resource);
+    
+    if (success) {
+      res.json({ message: 'Permission granted successfully' });
+    } else {
+      res.status(500).json({ error: 'Failed to grant permission' });
+    }
+  } catch (error) {
+    console.error('Error granting permission:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/fga/remove-permission', requiresAuth(), async (req, res) => {
+  try {
+    const { userId, action, resource } = req.body;
+    
+    if (!userId || !action || !resource) {
+      return res.status(400).json({ error: 'Missing required parameters' });
+    }
+    
+    const success = await fgaIntegration.removeRelationship(userId, action, resource);
+    
+    if (success) {
+      res.json({ message: 'Permission removed successfully' });
+    } else {
+      res.status(500).json({ error: 'Failed to remove permission' });
+    }
+  } catch (error) {
+    console.error('Error removing permission:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/fga/check-permission', requiresAuth(), async (req, res) => {
+  try {
+    const { userId, action, resource } = req.query;
+    
+    if (!userId || !action || !resource) {
+      return res.status(400).json({ error: 'Missing required parameters' });
+    }
+    
+    const isAuthorized = await fgaIntegration.checkAuthorization(userId, action, resource);
+    
+    res.json({ 
+      userId, 
+      action, 
+      resource, 
+      authorized: isAuthorized 
+    });
+  } catch (error) {
+    console.error('Error checking permission:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/fga/user-relationships', requiresAuth(), async (req, res) => {
+  try {
+    const userId = req.oidc.user.sub;
+    
+    // Get all relationships for the current user
+    const allRelationships = await fgaIntegration.getAllUserRelationships(userId);
+    
+    // Get ticket-specific relationships
+    const ticketRelationships = await fgaIntegration.getUserTicketRelationships(userId);
+    
+    res.json({ 
+      userId,
+      allRelationships,
+      ticketRelationships,
+      totalRelationships: allRelationships.length,
+      ticketRelationshipCount: ticketRelationships.length
+    });
+  } catch (error) {
+    console.error('Error getting user relationships:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Checkout page
 app.get('/checkout', (req, res) => {
   const cart = req.session.cart || [];
@@ -313,7 +465,7 @@ app.get('/checkout', (req, res) => {
 });
 
 // Process payment (mock)
-app.post('/process-payment', (req, res) => {
+app.post('/process-payment', requiresAuth(), async (req, res) => {
   const { cardNumber, name, vendor, expiry } = req.body;
   const cart = req.session.cart || [];
   const total = cart.reduce((sum, t) => sum + t.price, 0);
@@ -326,15 +478,56 @@ app.post('/process-payment', (req, res) => {
   // Stubbed payment vendor logic
   const transactionId = 'MOCK-' + Math.floor(Math.random() * 1000000);
 
-  // Clear cart after "payment"
-  req.session.cart = [];
+  try {
+    // Create FGA tuples for each purchased ticket
+    const userId = req.oidc.user.sub;
+    const purchaseResults = [];
 
-  res.render('payment-success', {
-    name,
-    vendor,
-    total,
-    transactionId
-  });
+    for (const ticket of cart) {
+      const success = await fgaIntegration.createTicketPurchase(
+        userId, 
+        ticket.id, 
+        ticket.name, 
+        transactionId
+      );
+      
+      purchaseResults.push({
+        ticketId: ticket.id,
+        ticketName: ticket.name,
+        success: success
+      });
+      
+      console.log(`Purchase tuple creation for ${ticket.name}: ${success ? 'SUCCESS' : 'FAILED'}`);
+    }
+
+    // Log purchase results
+    console.log('FGA Purchase Results:', purchaseResults);
+
+    // Clear cart after "payment"
+    req.session.cart = [];
+
+    res.render('payment-success', {
+      name,
+      vendor,
+      total,
+      transactionId,
+      purchaseResults
+    });
+  } catch (error) {
+    console.error('Error processing payment and creating FGA tuples:', error.message);
+    
+    // Still clear cart and show success, but log the FGA error
+    req.session.cart = [];
+    
+    res.render('payment-success', {
+      name,
+      vendor,
+      total,
+      transactionId,
+      purchaseResults: [],
+      fgaError: true
+    });
+  }
 });
 
 

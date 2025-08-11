@@ -2014,6 +2014,59 @@ hr {
   margin-bottom: 20px;
 }
 
+/* Ticket relationships section */
+.profile-page .ticket-relationships {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.profile-page .ticket-item {
+  background: #f8f9fa;
+  transition: all 0.3s ease;
+  border: 1px solid #dee2e6;
+}
+
+.profile-page .ticket-item:hover {
+  background: #e9ecef;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.profile-page .ticket-info strong {
+  color: #495057;
+}
+
+.profile-page .ticket-relation small {
+  font-size: 0.8rem;
+}
+
+/* Purchased tickets section */
+.profile-page .purchased-tickets {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.profile-page .purchased-tickets .ticket-item {
+  background: #d1e7dd;
+  border: 1px solid #badbcc;
+  transition: all 0.3s ease;
+}
+
+.profile-page .purchased-tickets .ticket-item:hover {
+  background: #c3e6cb;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.profile-page .ticket-status small {
+  font-size: 0.8rem;
+}
+
+.profile-page .material-symbols-outlined {
+  font-size: 1rem;
+  vertical-align: middle;
+}
+
 /* Checkout page specific styles */
 .checkout-page {
   background-color: #f8f9fa;
