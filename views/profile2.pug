@@ -24,6 +24,29 @@ block content
                     strong Last Login: 
                     | #{user.last_login || 'Not available'}
 
+            // Registered MFA Card
+            .card.shadow-sm
+              .card-body
+                h4.profile.mb-3 Registered MFA Factors
+              
+                h6 #{factors.id}
+
+                if factors && factors.length > 0
+                  ul.list-unstyled
+                    each factor in factors
+                      li.device-item.mb-2
+                        .device-card.p-2.border.rounded
+                          p.mb-1
+                            strong Factor Type: 
+                          |   #{factor.type || 'Type'}
+                          p.mb-0
+                            strong Is Verified: 
+                          |   #{factor.confirmed || 'N/A'}
+                else
+                  p.text-muted No registered Factors.
+                  text-center.mt-4
+                    // button.btn.btn-primary(type="button" onclick="window.location.href='https://nbcu.oktademo.cloud/authorize?audience=https://nbcu.cic-demo-platform.auth0app.com/userinfo&scope=openid&response_type=code&client_id=7BGRPVLlm5s1AeRrNu5I6fwQuhkymwIT&redirect_uri=http://localhost:8080/profile&state=qwhgdiuqwhsw2hdue2bhfdiul2hdlweiuhde&acr_values=http://schemas.openid.net/pape/policies/2007/06/multi-factor'") Click here to enroll
+                    button.btn.btn-primary(type="button" onclick=`window.location.href='${issuerUrl}/authorize?audience=${mgmtUrl}/userinfo&scope=openid&response_type=code&client_id=${clientId}&redirect_uri=${appUrl}profile&state=qwhgdiuqwhsw2hdue2bhfdiul2hdlweiuhde&acr_values=http://schemas.openid.net/pape/policies/2007/06/multi-factor'`) Click here to enroll
 
 
           // Right Column - Editable Profile Form

@@ -190,13 +190,47 @@ app.get('/profile', requiresAuth(), async (req, res) => {
   try {
     const token = await getManagementApiToken()
     const userId = req.oidc.user.sub;
-    const response = await axios.get(`${process.env.ISSUER_BASE_URL}/api/v2/users/${userId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    res.locals.user = response.data;
+	const authz_header = { Authorization: `Bearer ${token}` };
+
+	const url1 = `${process.env.ISSUER_BASE_URL}/api/v2/users/${userId}`;
+    const url2 = `${process.env.ISSUER_BASE_URL}/api/v2/users/${userId}/authentication-methods`;
+
+	console.log('Initiating API calls...');
+
+    // Use Promise.all to make concurrent requests
+    // axios.get() returns a promise
+    const [response1, response2] = await Promise.all([
+      axios.get(url1, { headers: authz_header }),
+      axios.get(url2, { headers: authz_header })
+    ]);
+
+    console.log('Both API calls completed successfully!');
+
+    // You can now access the data from each response
+    res.locals.user = response1.data;
+    res.locals.factors = response2.data;
+    
+	//const response = await axios.get(`${process.env.ISSUER_BASE_URL}/api/v2/users/${userId}`, {
+    //  headers: { Authorization: `Bearer ${token}` },
+    //});
+    //res.locals.user = response.data;
+	
+
   } catch (error) {
-    console.error('Error fetching user data:', error.message);
-    res.locals.user = req.oidc.user;
+    console.error('Error fetching data from one or more APIs:');
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      console.error('Status:', error.response.status);
+      console.error('Data:', error.response.data);
+      console.error('Headers:', error.response.headers);
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.error('Request Error:', error.request);
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      console.error('Error Message:', error.message);
+    }
   }
 
   // Get user's ticket relationships from FGA
@@ -257,12 +291,21 @@ app.get('/profile', requiresAuth(), async (req, res) => {
   } catch (error) {
     console.error('Error fetching used tickets:', error.message);
   }
+  const clientId = `${process.env.CLIENT_ID}`;
+  const mgmtUrl = `${process.env.MGMT_BASE_URL}`;
+  const issuerUrl = `${process.env.ISSUER_BASE_URL}`;
+  const appUrl = `${process.env.APP_URL}`;
 
   res.render('profile2', { 
     user: res.locals.user,
+	factors: res.locals.factors,
     userTicketRelationships: userTicketRelationships,
     userPurchasedTickets: userPurchasedTickets,
-    userUsedTickets: userUsedTickets
+    userUsedTickets: userUsedTickets,
+	clientId, 
+	issuerUrl, 
+	mgmtUrl, 
+	appUrl
   });
 });
 
