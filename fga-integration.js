@@ -271,13 +271,23 @@ class OktaFGAIntegration {
   }
 
   /**
-   * Create a purchase tuple for a ticket
+   * Generate a unique GUID for ticket identification
+   */
+  generateTicketGuid() {
+    return 't' + Math.random().toString(36).substr(2, 9);
+  }
+
+  /**
+   * Create a purchase tuple for a ticket with GUID
    */
   async createTicketPurchase(userId, ticketId, ticketName, transactionId) {
     try {
       const token = await this.getAccessToken();
       
-      // Create a purchase relationship
+      // Generate unique GUID for this ticket instance
+      const ticketGuid = this.generateTicketGuid();
+      
+      // Create a purchase relationship with GUID
       const response = await axios.post(
         `${this.fgaApiUrl}/stores/${this.storeId}/write`,
         {
@@ -285,7 +295,7 @@ class OktaFGAIntegration {
             tuple_keys: [{
               user: `user:${userId}`,
               relation: 'purchased',
-              object: `tickets:${ticketId}`
+              object: `tickets:${ticketGuid}`
             }]
           }
         },
@@ -297,18 +307,28 @@ class OktaFGAIntegration {
         }
       );
 
-      console.log(`Created purchase tuple for user ${userId}, ticket ${ticketId}, transaction ${transactionId}`);
-      return true;
+      console.log(`Created purchase tuple for user ${userId}, ticket ${ticketId}, GUID ${ticketGuid}, transaction ${transactionId}`);
+      
+      // Return the GUID for reference
+      return {
+        success: true,
+        ticketGuid: ticketGuid,
+        object: `tickets:${ticketId}:${ticketGuid}`
+      };
     } catch (error) {
       console.error('Error creating ticket purchase tuple:', error.message);
       if (error.response) {
         console.error('FGA API error response on POST:', error.response.data);
       }
-      return false;
+      return {
+        success: false,
+        ticketGuid: null,
+        object: null
+      };
     }
   }
 
-  /**
+    /**
    * Get all purchased tickets for a user
    */
   async getUserPurchasedTickets(userId) {
@@ -321,6 +341,44 @@ class OktaFGAIntegration {
             user: `user:${userId}`,
             relation: 'purchased',
             type: 'tickets'
+          },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      console.log('CURRENT FGA purchased tickets response:', response.data);
+      return response.data.objects || [];
+    } catch (error) {
+      console.error('Error getting user purchased tickets:', error.message);
+      if (error.response) {
+        console.error('FGA API error response on GET:', error.response.data);
+      }
+      return [];
+    }
+  }
+
+  /**
+   * Claim a specific ticket (change status from purchased to claimed)
+   */
+  async claimTicket(userId, ticketObject) {
+    try {
+      const token = await this.getAccessToken();
+      
+      // Remove the purchased relationship
+      await axios.post(
+        `${this.fgaApiUrl}/stores/${this.storeId}/write`,
+        {
+          deletes: {
+            tuple_keys: [{
+              user: `user:${userId}`,
+              relation: 'purchased',
+              object: ticketObject
+            }]
+          }
         },
         {
           headers: {
@@ -330,12 +388,161 @@ class OktaFGAIntegration {
         }
       );
 
-      console.log('FGA purchased tickets response:', response.data);
+      // Add the claimed relationship
+      const response = await axios.post(
+        `${this.fgaApiUrl}/stores/${this.storeId}/write`,
+        {
+          writes: {
+            tuple_keys: [{
+              user: `user:${userId}`,
+              relation: 'claimed',
+              object: ticketObject
+            }]
+          }
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      console.log(`Claimed ticket ${ticketObject} for user ${userId}`);
+      return true;
+    } catch (error) {
+      console.error('Error claiming ticket:', error.message);
+      if (error.response) {
+        console.error('FGA API error response:', error.response.data);
+      }
+      return false;
+    }
+  }
+
+  /**
+   * Use a specific ticket (change status from claimed to used)
+   */
+  async useTicket(userId, ticketObject) {
+    try {
+      const token = await this.getAccessToken();
+      
+      // Remove the claimed relationship
+      await axios.post(
+        `${this.fgaApiUrl}/stores/${this.storeId}/write`,
+        {
+          deletes: {
+            tuple_keys: [{
+              user: `user:${userId}`,
+              relation: 'claimed',
+              object: ticketObject
+            }]
+          }
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      // Add the used relationship
+      const response = await axios.post(
+        `${this.fgaApiUrl}/stores/${this.storeId}/write`,
+        {
+          writes: {
+            tuple_keys: [{
+              user: `user:${userId}`,
+              relation: 'used',
+              object: ticketObject
+            }]
+          }
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      console.log(`Used ticket ${ticketObject} for user ${userId}`);
+      return true;
+    } catch (error) {
+      console.error('Error using ticket:', error.message);
+      if (error.response) {
+        console.error('FGA API error response:', error.response.data);
+      }
+      return false;
+    }
+  }
+
+  /**
+   * Delete a specific ticket (remove from FGA completely)
+   */
+  async deleteTicket(userId, ticketObject) {
+    try {
+      const token = await this.getAccessToken();
+      
+      // Remove any relationship for this ticket
+      const response = await axios.post(
+        `${this.fgaApiUrl}/stores/${this.storeId}/write`,
+        {
+          deletes: {
+            tuple_keys: [{
+              user: `user:${userId}`,
+              relation: '*',
+              object: ticketObject
+            }]
+          }
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      console.log(`Deleted ticket ${ticketObject} for user ${userId}`);
+      return true;
+    } catch (error) {
+      console.error('Error deleting ticket:', error.message);
+      if (error.response) {
+        console.error('FGA API error response:', error.response.data);
+      }
+      return false;
+    }
+  }
+
+  /**
+   * Get tickets by status (purchased, claimed, used)
+   */
+  async getTicketsByStatus(userId, status) {
+    try {
+      const token = await this.getAccessToken();
+      
+      const response = await axios.post(
+        `${this.fgaApiUrl}/stores/${this.storeId}/list-objects`,
+        {
+            user: `user:${userId}`,
+            relation: status,
+            type: 'tickets'
+          },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      console.log(`FGA ${status} tickets response:`, response.data);
       return response.data.objects || [];
     } catch (error) {
-      console.error('Error getting user purchased tickets:', error.message);
+      console.error(`Error getting ${status} tickets:`, error.message);
       if (error.response) {
-        console.error('FGA API error response on GET:', error.response.data);
+        console.error('FGA API error response:', error.response.data);
       }
       return [];
     }

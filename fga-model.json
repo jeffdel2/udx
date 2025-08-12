@@ -1,6 +1,6 @@
 {
     "authorization_model": {
-        "id": "01K2CXQ2A5HFRMFBQ8QNX1WRC2",
+        "id": "01K2DT10JGRJTWVMW1FYMC2V02",
         "schema_version": "1.1",
         "type_definitions": [
             {
@@ -9,9 +9,23 @@
                 "metadata": null
             },
             {
+                "type": "share_user",
+                "relations": {},
+                "metadata": null
+            },
+            {
                 "type": "tickets",
                 "relations": {
                     "can_view": {
+                        "this": {}
+                    },
+                    "purchased": {
+                        "this": {}
+                    },
+                    "shared": {
+                        "this": {}
+                    },
+                    "used": {
                         "this": {}
                     }
                 },
@@ -19,6 +33,48 @@
                     "relations": {
                         "can_view": {
                             "directly_related_user_types": [
+                                {
+                                    "type": "share_user",
+                                    "condition": ""
+                                },
+                                {
+                                    "type": "user",
+                                    "condition": ""
+                                }
+                            ],
+                            "module": "",
+                            "source_info": null
+                        },
+                        "purchased": {
+                            "directly_related_user_types": [
+                                {
+                                    "type": "user",
+                                    "condition": ""
+                                }
+                            ],
+                            "module": "",
+                            "source_info": null
+                        },
+                        "shared": {
+                            "directly_related_user_types": [
+                                {
+                                    "type": "share_user",
+                                    "condition": ""
+                                },
+                                {
+                                    "type": "user",
+                                    "condition": ""
+                                }
+                            ],
+                            "module": "",
+                            "source_info": null
+                        },
+                        "used": {
+                            "directly_related_user_types": [
+                                {
+                                    "type": "share_user",
+                                    "condition": ""
+                                },
                                 {
                                     "type": "user",
                                     "condition": ""

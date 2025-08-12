@@ -2067,6 +2067,24 @@ hr {
   vertical-align: middle;
 }
 
+/* Used tickets section */
+.profile-page .used-tickets {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.profile-page .used-tickets .ticket-item {
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  transition: all 0.3s ease;
+}
+
+.profile-page .used-tickets .ticket-item:hover {
+  background: #f1b0b7;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
 /* Checkout page specific styles */
 .checkout-page {
   background-color: #f8f9fa;

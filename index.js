@@ -202,6 +202,7 @@ app.get('/profile', requiresAuth(), async (req, res) => {
   // Get user's ticket relationships from FGA
   let userTicketRelationships = [];
   let userPurchasedTickets = [];
+  let userUsedTickets = [];
   
   try {
     userTicketRelationships = await fgaIntegration.getUserTicketRelationships(req.oidc.user.sub);
@@ -213,14 +214,55 @@ app.get('/profile', requiresAuth(), async (req, res) => {
   try {
     userPurchasedTickets = await fgaIntegration.getUserPurchasedTickets(req.oidc.user.sub);
     console.log('User purchased tickets:', userPurchasedTickets);
+    
+    // Parse the FGA response to extract GUIDs
+    const parsedPurchasedTickets = userPurchasedTickets.map(ticketObject => {
+      // Extract GUID from "tickets:GUID" format
+      const guid = ticketObject.replace('tickets:', '');
+      
+      // Parse GUID format: type-timestamp-random
+      const parts = guid.split('-');
+      const typePrefix = parts[0];
+      const timestamp = parts[1];
+      
+      // Map type prefixes to readable names
+      const typeMap = {
+        'adt': 'Adult Day Pass',
+        'chd': 'Child Day Pass',
+        'sen': 'Senior Day Pass',
+        'fam': 'Family Pass',
+        'day': 'Day Pass',
+        'weekend': 'Weekend Pass',
+        'season': 'Season Pass'
+      };
+      
+      return {
+        type: typeMap[typePrefix] || guid, // Human readable name
+        guid: guid, // Full GUID
+        object: ticketObject, // Full FGA object
+        typePrefix: typePrefix, // Type prefix
+        timestamp: timestamp, // Purchase timestamp
+        purchaseDate: timestamp ? new Date(parseInt(timestamp)).toLocaleDateString() : 'Unknown'
+      };
+    });
+    
+    userPurchasedTickets = parsedPurchasedTickets;
   } catch (error) {
     console.error('Error fetching purchased tickets:', error.message);
+  }
+
+  try {
+    userUsedTickets = await fgaIntegration.getTicketsByStatus(req.oidc.user.sub, 'used');
+    console.log('User used tickets:', userUsedTickets);
+  } catch (error) {
+    console.error('Error fetching used tickets:', error.message);
   }
 
   res.render('profile2', { 
     user: res.locals.user,
     userTicketRelationships: userTicketRelationships,
-    userPurchasedTickets: userPurchasedTickets
+    userPurchasedTickets: userPurchasedTickets,
+    userUsedTickets: userUsedTickets
   });
 });
 
@@ -307,18 +349,14 @@ const tickets = [
 // Home page with tickets
 app.get('/tickets', requiresAuth(), async (req, res) => {
   try {
-    // Get all ticket relationships for the user
-    const userTicketRelationships = await fgaIntegration.getUserTicketRelationships(req.oidc.user.sub);
-    
-    // Check if user has any ticket relationships
-    if (!userTicketRelationships || userTicketRelationships.length === 0) {
-      return res.status(403).json({ 
-        error: 'Access denied', 
-        message: 'You do not have any ticket relationships defined in FGA' 
-      });
+    // Get all ticket relationships for the user (optional - for display purposes)
+    let userTicketRelationships = [];
+    try {
+      userTicketRelationships = await fgaIntegration.getUserTicketRelationships(req.oidc.user.sub);
+      console.log('User ticket relationships:', userTicketRelationships);
+    } catch (error) {
+      console.error('Error fetching ticket relationships (non-blocking):', error.message);
     }
-    
-    console.log('User ticket relationships:', userTicketRelationships);
     
     res.render('tickets', { 
       tickets,
@@ -326,7 +364,7 @@ app.get('/tickets', requiresAuth(), async (req, res) => {
       userTicketRelationships: userTicketRelationships
     });
   } catch (error) {
-    console.error('Error checking ticket relationships:', error.message);
+    console.error('Error rendering tickets page:', error.message);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -334,17 +372,6 @@ app.get('/tickets', requiresAuth(), async (req, res) => {
 // Add to cart
 app.post('/add-to-cart', requiresAuth(), async (req, res) => {
   try {
-    // Get all ticket relationships for the user
-    const userTicketRelationships = await fgaIntegration.getUserTicketRelationships(req.oidc.user.sub);
-    
-    // Check if user has any ticket relationships
-    if (!userTicketRelationships || userTicketRelationships.length === 0) {
-      return res.status(403).json({ 
-        error: 'Access denied', 
-        message: 'You do not have any ticket relationships defined in FGA' 
-      });
-    }
-    
     const ticketId = req.body.ticketId;
     const ticket = tickets.find(t => t.id === ticketId);
     if (!ticket) return res.status(404).send('Ticket not found.');
@@ -353,7 +380,7 @@ app.post('/add-to-cart', requiresAuth(), async (req, res) => {
     req.session.cart.push(ticket);
     res.redirect('/checkout');
   } catch (error) {
-    console.error('Error checking ticket relationships:', error.message);
+    console.error('Error adding to cart:', error.message);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -457,6 +484,92 @@ app.get('/fga/user-relationships', requiresAuth(), async (req, res) => {
   }
 });
 
+// Ticket management routes
+app.post('/tickets/claim', requiresAuth(), async (req, res) => {
+  try {
+    const { ticketObject } = req.body;
+    const userId = req.oidc.user.sub;
+    
+    if (!ticketObject) {
+      return res.status(400).json({ error: 'Ticket object is required' });
+    }
+    
+    const success = await fgaIntegration.claimTicket(userId, ticketObject);
+    
+    if (success) {
+      res.json({ message: 'Ticket claimed successfully' });
+    } else {
+      res.status(500).json({ error: 'Failed to claim ticket' });
+    }
+  } catch (error) {
+    console.error('Error claiming ticket:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/tickets/use', requiresAuth(), async (req, res) => {
+  try {
+    const { ticketObject } = req.body;
+    const userId = req.oidc.user.sub;
+    
+    if (!ticketObject) {
+      return res.status(400).json({ error: 'Ticket object is required' });
+    }
+    
+    const success = await fgaIntegration.useTicket(userId, ticketObject);
+    
+    if (success) {
+      res.json({ message: 'Ticket used successfully' });
+    } else {
+      res.status(500).json({ error: 'Failed to use ticket' });
+    }
+  } catch (error) {
+    console.error('Error using ticket:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.delete('/tickets/delete', requiresAuth(), async (req, res) => {
+  try {
+    const { ticketObject } = req.body;
+    const userId = req.oidc.user.sub;
+    
+    if (!ticketObject) {
+      return res.status(400).json({ error: 'Ticket object is required' });
+    }
+    
+    const success = await fgaIntegration.deleteTicket(userId, ticketObject);
+    
+    if (success) {
+      res.json({ message: 'Ticket deleted successfully' });
+    } else {
+      res.status(500).json({ error: 'Failed to delete ticket' });
+    }
+  } catch (error) {
+    console.error('Error deleting ticket:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/tickets/by-status/:status', requiresAuth(), async (req, res) => {
+  try {
+    const { status } = req.params;
+    const userId = req.oidc.user.sub;
+    
+    const tickets = await fgaIntegration.getTicketsByStatus(userId, status);
+    
+    res.json({ 
+      userId,
+      status,
+      tickets,
+      count: tickets.length
+    });
+  } catch (error) {
+    console.error('Error getting tickets by status:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Checkout page
 app.get('/checkout', (req, res) => {
   const cart = req.session.cart || [];
@@ -484,7 +597,7 @@ app.post('/process-payment', requiresAuth(), async (req, res) => {
     const purchaseResults = [];
 
     for (const ticket of cart) {
-      const success = await fgaIntegration.createTicketPurchase(
+      const result = await fgaIntegration.createTicketPurchase(
         userId, 
         ticket.id, 
         ticket.name, 
@@ -494,10 +607,12 @@ app.post('/process-payment', requiresAuth(), async (req, res) => {
       purchaseResults.push({
         ticketId: ticket.id,
         ticketName: ticket.name,
-        success: success
+        success: result.success,
+        ticketGuid: result.ticketGuid,
+        object: result.object
       });
       
-      console.log(`Purchase tuple creation for ${ticket.name}: ${success ? 'SUCCESS' : 'FAILED'}`);
+      console.log(`Purchase tuple creation for ${ticket.name}: ${result.success ? 'SUCCESS' : 'FAILED'}, GUID: ${result.ticketGuid}`);
     }
 
     // Log purchase results
